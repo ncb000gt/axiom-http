@@ -17,6 +17,28 @@ axiom.HTTP = {
 	}
 	return data;
     },
+    get_common_type: function(str, type) {
+	var ret = str;
+
+	if (['text/json','application/json'].contains(type.substring(0,(type.indexOf(';')||type.length)))) {
+	    try {
+		var json = null;
+		eval('json = ' + str);
+		ret = json;
+	    } catch (e) {
+		app.log('Error: Could not convert type to JSON, returning as String. ' + e);
+	    }
+	} else if(['text/html','text/xml','application/html','application/xml'].contains(type.substring(0,(type.indexOf(';')||type.length)))) {
+	    try {
+		str = str.replace(/\<(!DOCTYPE|\?xml)[^\>]*>/g, '');
+		ret = new XHTML(str);
+	    } catch (e) {
+		app.log('Error: Could not convert type to XHTML, returning as String. ' + e);
+	    }
+	}
+
+	return ret;
+    },
     get: function(url, params) {
 	var data = axiom.HTTP.encode_params(params);
 	url = new URL(url+'?'+data);
@@ -31,7 +53,8 @@ axiom.HTTP = {
 
         reader.close();
 
-	return str;
+	app.log(conn.getContentType());
+	return axiom.HTTP.get_common_type(str, conn.getContentType());
     },
     post: function(url, params) {
 	var data = axiom.HTTP.encode_params(params);
@@ -53,7 +76,7 @@ axiom.HTTP = {
 	writer.close();
         reader.close();
 
-	return str;
+	return axiom.HTTP.get_common_type(str, conn.getContentType());
     },
     ajax: function(url, data, callback, type) {
 	var r = new Runnable() {
