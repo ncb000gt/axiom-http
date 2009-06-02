@@ -24,20 +24,22 @@ axiom.HTTP = {
 	    try {
 		var json = null;
 		eval('json = ' + str);
-		ret = json;
+		return json;
 	    } catch (e) {
-		app.log('Error: Could not convert type to JSON, returning as String. ' + e);
+		app.log('Error: Could not convert type to JSON, returning as byte array. ' + e);
 	    }
 	} else if(['text/html','text/xml','application/html','application/xml'].contains(type.substring(0,(type.indexOf(';')||type.length)))) {
 	    try {
 		str = str.replace(/\<(!DOCTYPE|\?xml)[^\>]*>/g, '');
-		ret = new XHTML(str);
+		return new XHTML(str);
 	    } catch (e) {
-		app.log('Error: Could not convert type to XHTML, returning as String. ' + e);
+		app.log('Error: Could not convert type to XHTML, returning as byte array. ' + e);
 	    }
+	} else if (type.indexOf("text/") >= 0) {
+	    return str;
 	}
 
-	return ret;
+	return (new Packages.java.lang.String(ret)).getBytes();
     },
     get: function(url, params) {
 	var data = axiom.HTTP.encode_params(params);
@@ -53,7 +55,6 @@ axiom.HTTP = {
 
         reader.close();
 
-	app.log(conn.getContentType());
 	return axiom.HTTP.get_common_type(str, conn.getContentType());
     },
     post: function(url, params) {
