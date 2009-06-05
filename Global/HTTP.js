@@ -17,13 +17,13 @@ axiom.HTTP = {
 	}
 	return data;
     },
-    get_common_type: function(str, type) {
-	var ret = str;
+    get_common_type: function(byte_array, type) {
+	// TODO: String Encoding (ie. UTF-8)
 
 	if (['text/json','application/json'].contains(type.substring(0,(type.indexOf(';')||type.length)))) {
 	    try {
 		var json = null;
-		eval('json = ' + str);
+		eval('json = ' + Packages.java.lang.String(byte_array));
 		return json;
 	    } catch (e) {
 		app.log('Error: Could not convert type to JSON, returning as byte array. ' + e);
@@ -31,31 +31,33 @@ axiom.HTTP = {
 	} else if(['text/html','text/xml','application/html','application/xml'].contains(type.substring(0,(type.indexOf(';')||type.length)))) {
 	    try {
 		str = str.replace(/\<(!DOCTYPE|\?xml)[^\>]*>/g, '');
-		return new XHTML(str);
+		return new XHTML(Packages.java.lang.String(byte_array));
 	    } catch (e) {
 		app.log('Error: Could not convert type to XHTML, returning as byte array. ' + e);
 	    }
 	} else if (type.indexOf("text/") >= 0) {
-	    return str;
+	    return Packages.java.lang.String(byte_array);
 	}
 
-	return (new Packages.java.lang.String(ret)).getBytes();
+	return byte_array;
+    },
+    get_bytes: function(conn) {
+	var reader = new BufferedReader(new InputStreamReader(conn.getInputStream()));
+	var ins = conn.getInputStream();
+	var c;
+	var byteArrayOutputStream = new ByteArrayOutputStream();
+	while ((c = ins.read()) != -1) {
+            byteArrayOutputStream.write(c);
+	}
+
+	return byteArrayOutputStream.toByteArray();
     },
     get: function(url, params) {
 	var data = axiom.HTTP.encode_params(params);
 	url = new URL(url+'?'+data);
 	var conn = url.openConnection();
 
-	var str = '';
-	var reader = new BufferedReader(new InputStreamReader(conn.getInputStream()));
-        var line;
-        while ((line = reader.readLine()) != null) {
-            str += line + '\n';
-        }
-
-        reader.close();
-
-	return axiom.HTTP.get_common_type(str, conn.getContentType());
+	return axiom.HTTP.get_common_type(this.get_bytes(conn), conn.getContentType());
     },
     post: function(url, params) {
 	var data = axiom.HTTP.encode_params(params);
@@ -65,19 +67,9 @@ axiom.HTTP = {
         var writer = new OutputStreamWriter(conn.getOutputStream());
         writer.write(data);
         writer.flush();
-
-
-	var str = '';
-	var reader = new BufferedReader(new InputStreamReader(conn.getInputStream()));
-        var line;
-        while ((line = reader.readLine()) != null) {
-            str += line + '\n';
-        }
-
 	writer.close();
-        reader.close();
 
-	return axiom.HTTP.get_common_type(str, conn.getContentType());
+	return axiom.HTTP.get_common_type(this.get_bytes(conn), conn.getContentType());
     },
     ajax: function(url, data, callback, type) {
 	var r = new Runnable() {
