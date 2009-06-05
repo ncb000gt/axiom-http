@@ -43,7 +43,18 @@ axiom.HTTP = {
     },
     get: function(url, params) {
 	var data = axiom.HTTP.encode_params(params);
-	url = new URL(url+'?'+data);
+	var prefix = '?';
+	if (params) {
+	    if (url.indexOf('?') >= 0) {
+		prefix = '&';
+	    } else {
+		prefix = '?';
+	    }
+
+	    url += prefix + data ;
+	}
+	
+	url = new URL(url);
 	var conn = url.openConnection();
 
 	var str = '';
