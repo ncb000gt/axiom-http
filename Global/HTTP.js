@@ -30,8 +30,7 @@ axiom.HTTP = {
 	    }
 	} else if(['text/html','text/xml','application/html','application/xml'].contains(type.substring(0,(type.indexOf(';')||type.length)))) {
 	    try {
-		str = str.replace(/\<(!DOCTYPE|\?xml)[^\>]*>/g, '');
-		return new XHTML(Packages.java.lang.String(byte_array));
+		return new XHTML(Packages.java.lang.String(byte_array)+''.replace(/\<(!DOCTYPE|\?xml)[^\>]*>/g, ''));
 	    } catch (e) {
 		app.log('Error: Could not convert type to XHTML, returning as byte array. ' + e);
 	    }
@@ -64,7 +63,7 @@ axiom.HTTP = {
 
 	    url += prefix + data ;
 	}
-	
+
 	url = new URL(url);
 	var conn = url.openConnection();
 
